@@ -1,5 +1,7 @@
 # UBRobotics_Imeche_Challenge
 
+![Alt text](./ESP32-Pinout.png "pinout")
+
 <li><span class="my_icon ex_icon"></span> – Pay close attention because their behavior, particularly during boot, can be unpredictable. Use them only when absolutely necessary.</li>
 <li><span class="my_icon cross_icon"></span> – It is recommended that you avoid using these pins.</li>
 
