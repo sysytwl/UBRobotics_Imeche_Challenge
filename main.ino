@@ -1,6 +1,45 @@
 int status = 0;
 int output1 = 0; // debug
 
+class color_sensor {
+  public:
+    color_sensor(uint8_t s2, uint8_t s3, uint8_t out) {
+      _s2 = s2;
+      _s3 = s3;
+      _out = out;
+
+      pinMode(_s2, OUTPUT);  
+      pinMode(_s3, OUTPUT);  
+      pinMode(_out, INPUT); 
+    }
+}
+  void color() {    
+    //red
+    digitalWrite(_s2, LOW);  
+    digitalWrite(_s3, LOW);   
+    int red = pulseIn(_out, digitalRead(out) == HIGH ? LOW : HIGH);
+
+    //blue
+    digitalWrite(_s2, LOW);
+    digitalWrite(_s3, HIGH); 
+    int blue = pulseIn(_out, digitalRead(out) == HIGH ? LOW : HIGH);
+
+    //green
+    digitalWrite(_s2, HIGH);
+    digitalWrite(_s3, HIGH);   
+    int green = pulseIn(_out, digitalRead(out) == HIGH ? LOW : HIGH);
+
+    //white
+    //digitalWrite(s2, HIGH);
+    //digitalWrite(s3, LOW);  
+    //white = pulseIn(out, digitalRead(out) == HIGH ? LOW : HIGH);
+  
+    Serial.print("RGB:"); Serial.print(red); Serial.print(","); Serial.print(green); Serial.print(","); Serial.println(blue);
+  }
+
+  private:
+    uint8_t _s2, _s3, _out;
+
 class position_control {
   public:
     position_control(float kp, float ki, float kd) { // kp, ki, kd
