@@ -1,3 +1,6 @@
+int status = 0;
+int output1 = 0; // debug
+
 class position_control {
   public:
     position_control(float kp, float ki, float kd) { // kp, ki, kd
@@ -5,8 +8,6 @@ class position_control {
       _ki = ki;
       _kd = kd;
       _maxoutput = 255;
-      _minoutput = -255;
-      _home = -10;
     }
 
     float Compute(float input, float target) {
@@ -38,21 +39,17 @@ class position_control {
     return _output;
     }
 
-    int get_target(int input) {
-      if (input < -3){
-        cases = 2;
-      }
-
-      switch(cases) {
-        case 0: return _positive_inf;
-        case 1: return _home;
+    int get_target(int target) { // get the position of each line
+      switch(target) {
+        case 0: return _offset;
+        case 1: return _datum;
         case 2: return _red_line;
       }
     }
 
     void position_record(int color, int position) {
       if (_excolor != color) {
-        _exposition
+        //_exposition
       }
     }
 
@@ -62,7 +59,7 @@ class position_control {
     float _maxoutput, _minoutput, _outputp, _outputi = 0, _outputd, _output;
     float _err, _exerr;
 
-    int _home, _positive_inf = 999999, _red_line = 999, _offset, _exposition, _excolor;
+    int _datum = -9999999, _red_line = 9999, _offset, _exposition, _excolor;
 
     float _kp;
     float _ki;
@@ -124,7 +121,7 @@ class Motor {
 };
 
 Motor motor1(22, 23, 0, 1, 35, 34);
-Motor motor2(19, 21, 2, 3, 32, 33);
+Motor motor2(19, 21, 2, 3, 36, 39);
 
 void IRAM_ATTR encoder_A1() {
   if (digitalRead(motor1.pinA) ^ digitalRead(motor1.pinB)) {
@@ -170,9 +167,30 @@ void IRAM_ATTR encoder_B2() {
   //motor2.lastPulseTime = micros();
 }
 
-void IRAM_ATTR down_to_home() {
-  control1.cases = 1;
-  control2.cases = 1;
+void IRAM_ATTR down_to_datum() {
+  static unsigned long last_interrupt_time = 0;
+  unsigned long interrupt_time = millis();
+  // If interrupts come faster than 200ms, assume it's a bounce and ignore
+  if (interrupt_time - last_interrupt_time > 200) {
+    if (status == 2){
+      status = 3;
+    } else {
+      status = 0;
+    }
+  }
+  last_interrupt_time = interrupt_time;
+}
+
+void IRAM_ATTR bottom_switch() {
+  static unsigned long last_interrupt_time1 = 0;
+  unsigned long interrupt_time1 = millis();
+  // If interrupts come faster than 200ms, assume it's a bounce and ignore
+  if (interrupt_time1 - last_interrupt_time1 > 200) {
+    if (status != 2 && status != 3){
+      status ++;
+    }
+  }
+  last_interrupt_time1 = interrupt_time1;
 }
 
 void setup() {
@@ -190,24 +208,67 @@ void setup() {
   attachInterrupt(motor2.pinB, encoder_B2, CHANGE);
 
   //top switch
-  pinMode(25, INPUT_PULLUP);
-  attachInterrupt(25, down_to_home, FALLING);
+  pinMode(27, INPUT_PULLUP);
+  attachInterrupt(27, down_to_datum, FALLING);
+
+  //bottom switch
+  pinMode(26, INPUT_PULLUP);
+  attachInterrupt(26, bottom_switch, RISING);
 }
 
 void loop(){
   //Serial.print("PID running on core "); Serial.println(xPortGetCoreID());
-  int input1 = motor1.distance;            // data from encoder consider as a Process value
-  int input2 = motor2.distance;
+  switch (status){
+    case 0: { // idle can be moved
+      motor1.motorStop();
+      motor2.motorStop();
+      motor1.distance = 0;
+      motor2.distance = 0;
+    }
+    break;
 
-  int target1 = control1.get_target(input1);
-  int target2 = control2.get_target(input2);
+    case 1: { // ready to start
+      motor1.motorBrake();
+      motor2.motorBrake();
+      motor1.distance = 0;
+      motor2.distance = 0;
+    }
+    break;
 
-  int output1 = control1.Compute(input1, target1);                 // calculate new output
-  int output2 = control2.Compute(input2, target2);                 // calculate new output    
-  Serial.print("encoderValue: "); Serial.print(input1); Serial.print(", "); Serial.print(target1); Serial.print("    Output"); Serial.println(output1);
+    case 2: { // up to top
+      motor1.motorGo(255);
+      motor2.motorGo(255);
+    }
+    break;
 
-  motor1.motorGo(output1);
-  motor2.motorGo(output2);
+    case 3: { // down to DATUM line
+      motor1.motorGo(-255);
+      motor2.motorGo(-255);
+    }
+    break;
 
+    case 4: { // go to target
+      //static int 
+      output1 = control1.Compute(motor1.distance, control1.get_target(2));                 // calculate new output
+      int output2 = control2.Compute(motor2.distance, control2.get_target(2));                 // calculate new output    
+
+      motor1.motorGo(output1);
+      motor2.motorGo(output2);
+    }
+    break;
+
+    default:
+      status = 0;
+    break;
+  }
+
+  Serial.print("status: "); 
+  Serial.print(status); 
+  Serial.print("    encoderValue: "); 
+  Serial.print(motor1.distance); 
+  Serial.print("    target: "); 
+  Serial.print(control1.get_target(2)); 
+  Serial.print("    Output: "); 
+  Serial.println(output1);
   //color();
-}
+}
