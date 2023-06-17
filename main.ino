@@ -1,5 +1,4 @@
-int status = 0;
-int output1 = 0; // debug
+int status = 4;
 
 class color_sensor {
   public:
@@ -17,17 +16,17 @@ class color_sensor {
       //red
       digitalWrite(_s2, LOW);  
       digitalWrite(_s3, LOW);   
-      int red = pulseIn(_out,HIGH);
+      int red = pulseIn(_out, HIGH);
 
       //blue
       digitalWrite(_s2, LOW);
       digitalWrite(_s3, HIGH); 
-      int blue = pulseIn(_out,HIGH);
+      int blue = pulseIn(_out, HIGH);
 
       //green
       digitalWrite(_s2, HIGH);
       digitalWrite(_s3, HIGH);   
-      int green = pulseIn(_out,HIGH);
+      int green = pulseIn(_out, HIGH);
 
       //white
       //digitalWrite(s2, HIGH);
@@ -50,6 +49,7 @@ class position_control {
       _ki = ki;
       _kd = kd;
       _maxoutput = 255;
+      _minoutput = -255;
     }
 
     float Compute(float input, float target) {
@@ -58,10 +58,12 @@ class position_control {
       _outputp = _kp * _err;
       if (_err < 100 && _err > -100){ //Integral separation
         _outputi += _ki * _err;
+      } else {
+        _outputi = 0;
       }
       _outputd = _kd * (_err - _exerr);
 
-      if (_err < 3 && _err > -3) { // dead zone
+      if (_err < 2 && _err > -2) { // dead zone
         _err = 0;
         _outputp = 0;
         _outputi = 0;
@@ -75,6 +77,8 @@ class position_control {
       } else if (_output < _minoutput) {
         _output = _minoutput;
       }
+
+      Serial.print(_err); Serial.print("    "); Serial.print(_outputp); Serial.print("    "); Serial.print(_outputi); Serial.print("    "); Serial.println(_outputd);
 
       _exerr = _err;
     
@@ -101,14 +105,12 @@ class position_control {
     float _maxoutput, _minoutput, _outputp, _outputi = 0, _outputd, _output;
     float _err, _exerr;
 
-    int _datum = -9999999, _red_line = 9999, _offset, _exposition, _excolor;
+    int _datum = -9999999, _red_line = 836, _offset, _exposition, _excolor;
 
-    float _kp;
-    float _ki;
-    float _kd;
+    float _kp, _ki, _kd;
 };
 
-float kp = 0.72 , ki = 0.004 , kd = 0.15;             // modify for optimal performance
+float kp = 0.72 , ki = 0.01 , kd = 0.15;             // modify for optimal performance
 position_control control1(kp, ki, kd);
 position_control control2(kp, ki, kd);
 
@@ -136,7 +138,8 @@ class Motor {
         ledcWrite(_ledCH1, _maxpwm + pwmVal);
         ledcWrite(_ledCH2, _maxpwm);
       } else {
-        //motorBrake();
+        ledcWrite(_ledCH1, _maxpwm);
+        ledcWrite(_ledCH2, _maxpwm);
       }
     } 
     
@@ -157,7 +160,6 @@ class Motor {
   private:
     uint8_t _ledCH1;        // ESP32 ledc Channel for PWM   
     uint8_t _ledCH2;
-	  long _pwmVal;           // PWM Value (speed)
     long _maxpwm;           // Max PWM Value of the Motor
 
 };
@@ -291,11 +293,13 @@ void loop(){
 
     case 4: { // go to target
       //static int 
-      output1 = control1.Compute(motor1.distance, control1.get_target(2));                 // calculate new output
-      int output2 = control2.Compute(motor2.distance, control2.get_target(2));                 // calculate new output    
+      long output1 = control1.Compute(motor1.distance, control1.get_target(2));                 // calculate new output
+      //long output2 = control2.Compute(motor2.distance, control2.get_target(2));                 // calculate new output    
+
+      //Serial.print("status: "); Serial.print(status); Serial.print("    encoderValue: "); Serial.print(motor1.distance); Serial.print("    target: "); Serial.print(control1.get_target(2)); Serial.print("    Output: "); Serial.println(output1);
 
       motor1.motorGo(output1);
-      motor2.motorGo(output2);
+      //motor2.motorGo(output2);
     }
     break;
 
@@ -304,14 +308,6 @@ void loop(){
     break;
   }
 
-  colorsensor.color();
-  //Serial.print("status: "); 
-  //Serial.print(status); 
-  //Serial.print("    encoderValue: "); 
-  //Serial.print(motor1.distance); 
-  //Serial.print("    target: "); 
-  //Serial.print(control1.get_target(2)); 
-  //Serial.print("    Output: "); 
-  //Serial.println(output1);
+  //colorsensor.color();
   //color();
 }
