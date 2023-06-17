@@ -12,33 +12,36 @@ class color_sensor {
       pinMode(_s3, OUTPUT);  
       pinMode(_out, INPUT); 
     }
-}
-  void color() {    
-    //red
-    digitalWrite(_s2, LOW);  
-    digitalWrite(_s3, LOW);   
-    int red = pulseIn(_out, digitalRead(out) == HIGH ? LOW : HIGH);
 
-    //blue
-    digitalWrite(_s2, LOW);
-    digitalWrite(_s3, HIGH); 
-    int blue = pulseIn(_out, digitalRead(out) == HIGH ? LOW : HIGH);
+    void color() {    
+      //red
+      digitalWrite(_s2, LOW);  
+      digitalWrite(_s3, LOW);   
+      int red = pulseIn(_out,HIGH);
 
-    //green
-    digitalWrite(_s2, HIGH);
-    digitalWrite(_s3, HIGH);   
-    int green = pulseIn(_out, digitalRead(out) == HIGH ? LOW : HIGH);
+      //blue
+      digitalWrite(_s2, LOW);
+      digitalWrite(_s3, HIGH); 
+      int blue = pulseIn(_out,HIGH);
 
-    //white
-    //digitalWrite(s2, HIGH);
-    //digitalWrite(s3, LOW);  
-    //white = pulseIn(out, digitalRead(out) == HIGH ? LOW : HIGH);
+      //green
+      digitalWrite(_s2, HIGH);
+      digitalWrite(_s3, HIGH);   
+      int green = pulseIn(_out,HIGH);
+
+      //white
+      //digitalWrite(s2, HIGH);
+      //digitalWrite(s3, LOW);  
+      //white = pulseIn(out, digitalRead(out) == HIGH ? LOW : HIGH);
   
-    Serial.print("RGB:"); Serial.print(red); Serial.print(","); Serial.print(green); Serial.print(","); Serial.println(blue);
-  }
+      Serial.print("RGB:"); Serial.print(red); Serial.print(","); Serial.print(green); Serial.print(","); Serial.println(blue);
+    }
 
   private:
     uint8_t _s2, _s3, _out;
+};
+
+color_sensor colorsensor(33, 32, 25);
 
 class position_control {
   public:
@@ -301,13 +304,14 @@ void loop(){
     break;
   }
 
-  Serial.print("status: "); 
-  Serial.print(status); 
-  Serial.print("    encoderValue: "); 
-  Serial.print(motor1.distance); 
-  Serial.print("    target: "); 
-  Serial.print(control1.get_target(2)); 
-  Serial.print("    Output: "); 
-  Serial.println(output1);
+  colorsensor.color();
+  //Serial.print("status: "); 
+  //Serial.print(status); 
+  //Serial.print("    encoderValue: "); 
+  //Serial.print(motor1.distance); 
+  //Serial.print("    target: "); 
+  //Serial.print(control1.get_target(2)); 
+  //Serial.print("    Output: "); 
+  //Serial.println(output1);
   //color();
 }
