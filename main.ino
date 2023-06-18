@@ -78,7 +78,7 @@ class position_control {
         _output = _minoutput;
       }
 
-      Serial.print(_err); Serial.print("    "); Serial.print(_outputp); Serial.print("    "); Serial.print(_outputi); Serial.print("    "); Serial.println(_outputd);
+      //Serial.print(_err); Serial.print("    "); Serial.print(_outputp); Serial.print("    "); Serial.print(_outputi); Serial.print("    "); Serial.println(_outputd);
 
       _exerr = _err;
     
@@ -105,7 +105,8 @@ class position_control {
     float _maxoutput, _minoutput, _outputp, _outputi = 0, _outputd, _output;
     float _err, _exerr;
 
-    int _datum = -9999999, _red_line = 836, _offset, _exposition, _excolor;
+    float _resolution = 126.0 / 836.0; // mmm
+    int _datum = -9999999, _red_line = 836, _offset = 36.0 / _resolution, _exposition, _excolor;
 
     float _kp, _ki, _kd;
 };
@@ -293,10 +294,10 @@ void loop(){
 
     case 4: { // go to target
       //static int 
-      long output1 = control1.Compute(motor1.distance, control1.get_target(2));                 // calculate new output
+      long output1 = (long) control1.Compute(motor1.distance, control1.get_target(0));                 // calculate new output
       //long output2 = control2.Compute(motor2.distance, control2.get_target(2));                 // calculate new output    
 
-      //Serial.print("status: "); Serial.print(status); Serial.print("    encoderValue: "); Serial.print(motor1.distance); Serial.print("    target: "); Serial.print(control1.get_target(2)); Serial.print("    Output: "); Serial.println(output1);
+      Serial.print("status: "); Serial.print(status); Serial.print("    encoderValue: "); Serial.print(motor1.distance); Serial.print("    target: "); Serial.print(control1.get_target(0)); Serial.print("    Output: "); Serial.println(output1);
 
       motor1.motorGo(output1);
       //motor2.motorGo(output2);
