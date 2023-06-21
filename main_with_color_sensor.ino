@@ -5,11 +5,10 @@
 
 
 
-int status = 4;
-
-const char* ssid = "UBrobotics";
-const char* password = "ubrobotics1";
-
+static int status = 0;
+static bool ex_color_status = 0;
+static bool color_status = 0;
+static int is_red = 0;
 
 
 class color_sensor {
@@ -24,31 +23,31 @@ class color_sensor {
       pinMode(_out, INPUT); 
     }
 
-    float color() {    
+    bool color() {    
       //red
       digitalWrite(_s2, LOW);  
       digitalWrite(_s3, LOW);   
       //long red = map(1000.0 / pulseIn(_out, HIGH), 95, 4, 255, 0);
-      long red = 5100.0 / (pulseIn(_out, HIGH) + pulseIn(_out, LOW));
+      long red = 5100.0 / (pulseIn(_out, HIGH));
 
       //green
       digitalWrite(_s2, HIGH);
       digitalWrite(_s3, HIGH);   
       //long green = map(1000.0 / pulseIn(_out, HIGH), 88, 3, 255, 0);
-      long green = 5604.4 / (pulseIn(_out, HIGH) + pulseIn(_out, LOW));
+      long green = 5604.4 / (pulseIn(_out, HIGH));
 
       //blue
       digitalWrite(_s2, LOW);
       digitalWrite(_s3, HIGH); 
       //long blue = map(1000.0 / pulseIn(_out, HIGH), 116, 4, 255, 0);
-      long blue = 4594.6 / (pulseIn(_out, HIGH) + pulseIn(_out, LOW));
+      long blue = 4594.6 / (pulseIn(_out, HIGH));
 
       //white
       //digitalWrite(s2, HIGH);
       //digitalWrite(s3, LOW);  
-      //white = pulseIn(out, digitalRead(out) == HIGH ? LOW : HIGH);
+      //white = pulseIn(out_,LOW);
 
-      //Serial.print("RGB:"); Serial.print(red); Serial.print(","); Serial.print(green); Serial.print(","); Serial.println(blue);
+      Serial.print("RGB:"); Serial.print(red); Serial.print(","); Serial.print(green); Serial.print(","); Serial.println(blue);
 
       float maxVal = max(red, max(green, blue));
       float minVal = min(red, min(green, blue));
@@ -69,17 +68,21 @@ class color_sensor {
       }
 
       // Calculate saturation
-      if (maxVal == 0) {
-          _s = 0;
-      } else {
-          _s = delta / maxVal;
-      }
+      //if (maxVal == 0) {
+      //    _s = 0;
+      //} else {
+      //    _s = delta / maxVal;
+      //}
 
       // Calculate value
       //_v = maxVal;
-      Serial.print("HSV:"); Serial.print(_h); Serial.print(","); Serial.print(_s); Serial.print(","); Serial.println(maxVal);
-  
-    return _h, _s, maxVal;
+      //Serial.print("HSV:"); Serial.print(_h); Serial.print(","); Serial.print(_s); Serial.print(","); Serial.println(maxVal);
+
+      if ( _h > 340 && _h < 361) {
+        return true;
+      } else {
+        return false;
+      }
     }
 
   private:
@@ -154,6 +157,8 @@ class position_control {
     float _resolution = 126.0 / 836.0; // mmm
     int _datum = -2.2 * 1000.0 / _resolution, _red_line = -1.1 * 1000.0 / _resolution; // _offset = 36.0 / _resolution;
 
+    float real_resolution;
+    int real_datum = , real_resolution = , real_red_line;
     //int _exposition, _maxposition;
 
     float _kp, _ki, _kd;
@@ -309,6 +314,9 @@ void setup() {
   //bottom switch
   pinMode(26, INPUT_PULLUP);
   attachInterrupt(26, bottom_switch, RISING);
+
+  //on board LED
+  pinMode(2,OUTPUT);
 }
 
 void loop(){
@@ -333,54 +341,62 @@ void loop(){
       motor2.position = 0;
 
       //debug only
-      Serial.print("status: "); Serial.println(status); 
+      //Serial.print("status: "); Serial.println(status); 
     }
     break;
 
     case 2: { // up to top
       motor1.motorGo(255);
       motor2.motorGo(255);
-
+      
+      color_status = colorsensor.color();
+      if (color_status ^ ex_color_status) {
+        is_red++;
+        control1.real_red_line += (float) motor1.position / (float) is_red;
+        control2.real_red_line += (float) motor2.position / (float) is_red;
+        if (is_red == 2) {
+          
+        }
+      }
       //debug only
-      Serial.print("status: "); Serial.print(status); Serial.print("    encoderValue: "); Serial.println(motor1.position);
-
+      //Serial.print("status: "); Serial.print(status); Serial.print("    encoderValue: "); Serial.println(motor1.position);
     }
     break;
 
     case 3: { // down to DATUM line
       long output1 = (long) control1.Compute(motor1.position, control1.get_target(1));                 // calculate new output
-      //long output2 = (long) control2.Compute(motor2.position, control2.get_target(1));                 // calculate new output
+      long output2 = (long) control2.Compute(motor2.position, control2.get_target(1));                 // calculate new output
       
-      if (output1 == 0 ) { //&& output2 == 0) {
+      if (output1 == 0 && output2 == 0) {
         status++;
       }
 
       //debug only
-      Serial.print("status: "); Serial.print(status); Serial.print("    encoderValue: "); Serial.print(motor1.position); Serial.print("    target: "); Serial.print(control1.get_target(1)); Serial.print("    Output: "); Serial.println(output1);
+      //Serial.print("status: "); Serial.print(status); Serial.print("    encoderValue: "); Serial.print(motor1.position); Serial.print("    target: "); Serial.print(control1.get_target(1)); Serial.print("    Output: "); Serial.println(output1);
 
       motor1.motorGo(output1);
-      //motor2.motorGo(output2);
+      motor2.motorGo(output2);
     }
     break;
 
     case 4: { // go to target
       long output1 = (long) control1.Compute(motor1.position, control1.get_target(2));                 // calculate new output
-      //long output2 = (long) control2.Compute(motor2.position, control2.get_target(2));                 // calculate new output    
+      long output2 = (long) control2.Compute(motor2.position, control2.get_target(2));                 // calculate new output    
 
       //debug only
-      Serial.print("status: "); Serial.print(status); Serial.print("    encoderValue: "); Serial.print(motor1.position); Serial.print("    target: "); Serial.print(control1.get_target(2)); Serial.print("    Output: "); Serial.println(output1);
+      //Serial.print("status: "); Serial.print(status); Serial.print("    encoderValue: "); Serial.print(motor1.position); Serial.print("    target: "); Serial.print(control1.get_target(2)); Serial.print("    Output: "); Serial.println(output1);
 
       motor1.motorGo(output1);
-      //motor2.motorGo(output2);
+      motor2.motorGo(output2);
     }
     break;
 
     case 5: {
       WiFi.mode(WIFI_STA);
-      WiFi.begin(ssid, password);
-      Serial.print("wait for connection");
+      WiFi.begin("UBrobotics", "ubrobotics1");
+      //Serial.print("wait for connection");
       while (WiFi.waitForConnectResult() != WL_CONNECTED) {
-        Serial.print(".");
+        //Serial.print(".");
         delay(5000);
       }
 
@@ -411,18 +427,18 @@ void loop(){
         });
       ArduinoOTA.begin();
 
-      Serial.println("Ready");
-      Serial.print("IP address: ");
-      Serial.println(WiFi.localIP());
+      //Serial.println("Ready");
+      //Serial.print("IP address: ");
+      //Serial.println(WiFi.localIP());
       status ++;
-      Serial.println("ready to Update");
+      digitalWrite(2,HIGH);
+      //Serial.println("ready to Update");
     }
     break;
 
     case 6: { // OTA
       ArduinoOTA.handle();
-      Serial.print(".");
-      delay(5000);
+      //Serial.print(".");
     }
     break;
 
