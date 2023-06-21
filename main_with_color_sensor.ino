@@ -9,6 +9,9 @@ static int status = 0;
 static bool ex_color_status = 0;
 static bool color_status = 0;
 static int is_red = 0;
+static int start_line1;
+static int start_line2;
+
 
 
 class color_sensor {
@@ -355,7 +358,23 @@ void loop(){
         control1.real_red_line += (float) motor1.position / (float) is_red;
         control2.real_red_line += (float) motor2.position / (float) is_red;
         if (is_red == 2) {
-          
+          int distance_traveled1 = (float) control1.real_red_line * control1._resolution;
+          int distance_traveled2 = (float) control2.real_red_line * control2._resolution;
+          if (distance_traveled1 < 950) {
+            start_line1 = 3;
+          } else if (distance_traveled1 < 1050) {
+            start_line1 = 2;
+          } else if (distance_traveled1 < 1150) {
+            start_line1 = 1;
+          }
+
+          if (distance_traveled2 < 950) {
+            start_line2 = 3;
+          } else if (distance_traveled2 < 1050) {
+            start_line2 = 2;
+          } else if (distance_traveled2 < 1150) {
+            start_line2 = 1;
+          }
         }
       }
       //debug only
