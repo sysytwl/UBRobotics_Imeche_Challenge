@@ -1,7 +1,5 @@
 #include "CameraWebServer.h"
-#include "server_index.cpp"
-#include "login_page.cpp"
-#include "app_httpd.cpp"
+//#include "app_httpd.cpp"
 
 
 
