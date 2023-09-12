@@ -19,7 +19,4 @@
 
 // 4 for flash led or 33 for normal led
 #define LED_GPIO_NUM       4
-
-#else
-#error "Camera model not selected"
 #endif

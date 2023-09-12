@@ -20,17 +20,13 @@
 #include "sdkconfig.h"
 #include "camera_index.h"
 
-#if defined(ARDUINO_ARCH_ESP32) && defined(CONFIG_ARDUHAL_ESP_LOG)
-#include "esp32-hal-log.h"
-#endif
+
 
 // Face Detection will not work on boards without (or with disabled) PSRAM
-
 #define CONFIG_ESP_FACE_DETECT_ENABLED 0
 #define CONFIG_ESP_FACE_RECOGNITION_ENABLED 0
 
 #if CONFIG_ESP_FACE_DETECT_ENABLED
-
 #include <vector>
 #include "human_face_detect_msr01.hpp"
 #include "human_face_detect_mnp01.hpp"
@@ -340,8 +336,7 @@ static size_t jpg_encode_stream(void *arg, size_t index, const void *data, size_
     return len;
 }
 
-static esp_err_t capture_handler(httpd_req_t *req)
-{
+static esp_err_t capture_handler(httpd_req_t *req){
     camera_fb_t *fb = NULL;
     esp_err_t res = ESP_OK;
 #if ARDUHAL_LOG_LEVEL >= ARDUHAL_LOG_LEVEL_INFO
@@ -1173,8 +1168,7 @@ static esp_err_t win_handler(httpd_req_t *req)
     return httpd_resp_send(req, NULL, 0);
 }
 
-static esp_err_t index_handler(httpd_req_t *req)
-{
+static esp_err_t index_handler(httpd_req_t *req) {
     httpd_resp_set_type(req, "text/html");
     httpd_resp_set_hdr(req, "Content-Encoding", "gzip");
     sensor_t *s = esp_camera_sensor_get();
@@ -1192,8 +1186,7 @@ static esp_err_t index_handler(httpd_req_t *req)
     }
 }
 
-void startCameraServer()
-{
+void startCameraServer() {
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
     config.max_uri_handlers = 16;
 
@@ -1349,8 +1342,7 @@ void startCameraServer()
     recognizer.set_ids_from_flash();
 #endif
     log_i("Starting web server on port: '%d'", config.server_port);
-    if (httpd_start(&camera_httpd, &config) == ESP_OK)
-    {
+    if (httpd_start(&camera_httpd, &config) == ESP_OK){
         httpd_register_uri_handler(camera_httpd, &index_uri);
         httpd_register_uri_handler(camera_httpd, &cmd_uri);
         httpd_register_uri_handler(camera_httpd, &status_uri);
@@ -1367,8 +1359,7 @@ void startCameraServer()
     config.server_port += 1;
     config.ctrl_port += 1;
     log_i("Starting stream server on port: '%d'", config.server_port);
-    if (httpd_start(&stream_httpd, &config) == ESP_OK)
-    {
+    if (httpd_start(&stream_httpd, &config) == ESP_OK){
         httpd_register_uri_handler(stream_httpd, &stream_uri);
     }
 }

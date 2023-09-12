@@ -7,8 +7,6 @@ WebServer server(80);
 
 void setup() {
   Serial.begin(115200);
-  Serial.setDebugOutput(true);
-  Serial.println();
 
   camera_config_t config;
   config.ledc_channel = LEDC_CHANNEL_0;
@@ -50,6 +48,7 @@ void setup() {
   }
 
   sensor_t * s = esp_camera_sensor_get();
+  Serial.println(s->id.PID);
   // initial sensors are flipped vertically and colors are a bit saturated
   if (s->id.PID == OV3660_PID) {
     s->set_vflip(s, 1); // flip it back
@@ -79,7 +78,7 @@ void setup() {
     WIFI_POWER_5dBm       //  5dBm
     WIFI_POWER_2dBm       //  2dBm
     WIFI_POWER_MINUS_1dBm // -1dBm( For -1dBm of output, lowest. Supply current ~120mA) */
-  WiFi.setTxPower(WIFI_POWER_MINUS_1dBm);
+  WiFi.setTxPower(WIFI_POWER_19_5dBm);
   
   IPAddress IP = WiFi.softAPIP();
   Serial.print("AP IP address: ");
@@ -93,12 +92,12 @@ void setup() {
     }
   }
   Serial.println("mDNS responder started");
-  /*return index page which is stored in serverIndex */
-  server.on("/login", HTTP_GET, []() {
+
+  server.on("/test", HTTP_GET, []() {
     server.sendHeader("Connection", "close");
-    server.send(200, "text/html", loginIndex);
+    server.send(200, "text/html", test);
   });
-  server.on("/serverIndex", HTTP_GET, []() {
+  server.on("/OTA", HTTP_GET, []() {
     server.sendHeader("Connection", "close");
     server.send(200, "text/html", serverIndex);
   });
@@ -129,15 +128,14 @@ void setup() {
   });
   server.begin();
 
-  startCameraServer();
+  //startCameraServer();
 
-  Serial.print("Camera Ready! Use 'http://");
-  Serial.print(WiFi.localIP());
-  Serial.println("' to connect");
+  //Serial.print("Camera Ready!");
 }
 
 void loop() {
   // Do nothing. Everything is done in another task by the web server
   server.handleClient();
-  delay(100);
+  delay(1);
+  color_detection();
 }
