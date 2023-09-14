@@ -1,4 +1,3 @@
-#if defined(CAMERA_MODEL_AI_THINKER)
 #define PWDN_GPIO_NUM     32
 #define RESET_GPIO_NUM    -1
 #define XCLK_GPIO_NUM      0
@@ -19,4 +18,3 @@
 
 // 4 for flash led or 33 for normal led
 #define LED_GPIO_NUM       4
-#endif

@@ -1,70 +1,16 @@
 #include "CameraWebServer.h"
-//#include "app_httpd.cpp"
 
 
 
 WebServer server(80);
+espcamera ESP32Camera(4); // pin
 
 void setup() {
+  //ESP32CrashHandler::disableCoreDumps(); // disable core dumps
   Serial.begin(115200);
 
-  camera_config_t config;
-  config.ledc_channel = LEDC_CHANNEL_0;
-  config.ledc_timer = LEDC_TIMER_0;
-  config.pin_d0 = Y2_GPIO_NUM;
-  config.pin_d1 = Y3_GPIO_NUM;
-  config.pin_d2 = Y4_GPIO_NUM;
-  config.pin_d3 = Y5_GPIO_NUM;
-  config.pin_d4 = Y6_GPIO_NUM;
-  config.pin_d5 = Y7_GPIO_NUM;
-  config.pin_d6 = Y8_GPIO_NUM;
-  config.pin_d7 = Y9_GPIO_NUM;
-  config.pin_xclk = XCLK_GPIO_NUM;
-  config.pin_pclk = PCLK_GPIO_NUM;
-  config.pin_vsync = VSYNC_GPIO_NUM;
-  config.pin_href = HREF_GPIO_NUM;
-  config.pin_sccb_sda = SIOD_GPIO_NUM;
-  config.pin_sccb_scl = SIOC_GPIO_NUM;
-  config.pin_pwdn = PWDN_GPIO_NUM;
-  config.pin_reset = RESET_GPIO_NUM;
-  config.xclk_freq_hz = 20000000;
-  config.frame_size = FRAMESIZE_96X96; // 96x96 resolution
-  //config.pixel_format = PIXFORMAT_JPEG, //PIXFORMAT_RGB888,    // 3BPP/RGB888 image format
-  config.pixel_format = PIXFORMAT_RGB565; // for face detection/recognition
-  config.grab_mode = CAMERA_GRAB_WHEN_EMPTY;
-  config.fb_location = CAMERA_FB_IN_PSRAM;
-  config.jpeg_quality = 12;
-  config.fb_count = 1;
-  config.jpeg_quality = 10; // ?
-  config.fb_count = 2; // ?
-  config.grab_mode = CAMERA_GRAB_LATEST; // ?
-
-
-  // camera init
-  esp_err_t err = esp_camera_init(&config);
-  if (err != ESP_OK) {
-    Serial.printf("Camera init failed with error 0x%x", err);
-    return;
-  }
-
-  sensor_t * s = esp_camera_sensor_get();
-  Serial.println(s->id.PID);
-  // initial sensors are flipped vertically and colors are a bit saturated
-  if (s->id.PID == OV3660_PID) {
-    s->set_vflip(s, 1); // flip it back
-    s->set_brightness(s, 1); // up the brightness just a bit
-    s->set_saturation(s, -2); // lower the saturation
-  }
-
-// Setup LED FLash if LED pin is defined in camera_pins.h
-#if defined(LED_GPIO_NUM)
-  setupLedFlash(LED_GPIO_NUM);
-#endif
-
-// wifi
   // AP name,passwd
-  WiFi.softAP(host, password);
-  
+  WiFi.softAP(host, password, channel);
   /*  Available ESP32 RF power parameters:
     WIFI_POWER_19_5dBm    // 19.5dBm (For 19.5dBm of output, highest. Supply current ~150mA)
     WIFI_POWER_19dBm      // 19dBm
@@ -78,24 +24,28 @@ void setup() {
     WIFI_POWER_5dBm       //  5dBm
     WIFI_POWER_2dBm       //  2dBm
     WIFI_POWER_MINUS_1dBm // -1dBm( For -1dBm of output, lowest. Supply current ~120mA) */
-  WiFi.setTxPower(WIFI_POWER_19_5dBm);
+  WiFi.setTxPower(WIFI_POWER_MINUS_1dBm);
   
   IPAddress IP = WiFi.softAPIP();
   Serial.print("AP IP address: ");
   Serial.println(IP);
 
   /*use mdns for host name resolution*/
-  if (!MDNS.begin(host)) { //http://esp32.local
-    Serial.println("Error setting up MDNS responder!");
-    while (1) {
-      delay(1000);
-    }
-  }
-  Serial.println("mDNS responder started");
+  //if (!MDNS.begin(host)) { //http://esp32.local
+  //Serial.println("Error setting up MDNS responder!");
+  //  while (1) {
+  //    delay(1000);
+  //  }
+  //}
+  //Serial.println("mDNS responder started");
 
-  server.on("/test", HTTP_GET, []() {
+  server.on("/color_output", HTTP_GET, []() {
     server.sendHeader("Connection", "close");
-    server.send(200, "text/html", test);
+    server.send(200, "text/html", color_output);
+  });
+  server.on("/jquery.min.js", HTTP_GET, []() {
+    server.sendHeader("Connection", "close");
+    server.send(200, "text/html", _js);
   });
   server.on("/OTA", HTTP_GET, []() {
     server.sendHeader("Connection", "close");
@@ -104,7 +54,7 @@ void setup() {
   /*handling uploading firmware file */
   server.on("/update", HTTP_POST, []() {
     server.sendHeader("Connection", "close");
-    server.send(200, "text/plain", (Update.hasError()) ? "FAIL" : "OK");
+    server.send(200, "text/plain", (Update.hasError()) ? "alert('FAIL');" : "alert('OK');");
     ESP.restart();
   }, []() {
     HTTPUpload& upload = server.upload();
@@ -128,14 +78,17 @@ void setup() {
   });
   server.begin();
 
-  //startCameraServer();
-
-  //Serial.print("Camera Ready!");
+  ESP32Camera.LEDInit();
+  ESP32Camera.CameraInit();
 }
-
+int i;
 void loop() {
-  // Do nothing. Everything is done in another task by the web server
   server.handleClient();
+  if (i==2000){
+    i = 0;
+    ESP32Camera.color_detection();
+  } else {
+    i++;
+  }
   delay(1);
-  color_detection();
 }
