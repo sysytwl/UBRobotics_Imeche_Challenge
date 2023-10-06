@@ -14,6 +14,7 @@
 ---
 
 ## 2. I2C: https://randomnerdtutorials.com/esp32-i2c-communication-arduino-ide/
+      - SPI: https://randomnerdtutorials.com/esp32-spi-communication-arduino/
 
 ## 3. VL53L1X: https://github.com/adafruit/Adafruit_VL53L1X
 
