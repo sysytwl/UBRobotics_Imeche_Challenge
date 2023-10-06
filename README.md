@@ -3,7 +3,8 @@
 ## 1. Using Esp32-Cam module
 1. Pin Out:
 * ![ESP32-CAM-pinout-1](https://github.com/sysytwl/UBRobotics_Imeche_Challenge/assets/61526569/a11bcfe0-291e-4d84-baa4-a3f189bd8417)
----
+
+
 2. The following pins are internally connected to the microSD card reader:
   - GPIO 14: CLK
   - GPIO 15: CMD
@@ -11,10 +12,10 @@
   - GPIO 4: Data 1 (also connected to the on-board LED)
   - GPIO 12: Data 2
   - GPIO 13: Data 3
----
+
 
 ## 2. I2C: https://randomnerdtutorials.com/esp32-i2c-communication-arduino-ide/
-      - SPI: https://randomnerdtutorials.com/esp32-spi-communication-arduino/
+- SPI: https://randomnerdtutorials.com/esp32-spi-communication-arduino/
 
 ## 3. VL53L1X: https://github.com/adafruit/Adafruit_VL53L1X
 
