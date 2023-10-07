@@ -15,7 +15,7 @@
 
 /*
 R/W ADDRESS         DATA
-B15 B14 B13 B12 B11 B10 B9 B8 B7 B6 B5 B4 B3 B2 B1 B0       For a write command (W0 = 0)
+B15 B14 B13 B12 B11 B10 B9 B8 B7 B6 B5 B4 B3 B2 B1 B0       For a write command (W0 = 0), For a read command (W0 = 1)
 W0  A3  A2  A1  A0  D10 D9 D8 D7 D6 D5 D4 D3 D2 D1 D0
 */
 
