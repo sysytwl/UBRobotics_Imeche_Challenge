@@ -11,13 +11,15 @@
 #define OCP_Control 0x5
 #define CSA_Control 0x6
 #define Reserved 0x7
+#define Reserved_bit 0b0
+
+/*
+R/W ADDRESS         DATA
+B15 B14 B13 B12 B11 B10 B9 B8 B7 B6 B5 B4 B3 B2 B1 B0       For a write command (W0 = 0)
+W0  A3  A2  A1  A0  D10 D9 D8 D7 D6 D5 D4 D3 D2 D1 D0
+*/
 
 
-extern uint16_t drv_regs_error;
-
-static const std::string Fault_Status_1_str[11] = {"vds_lc", "vds_hc", "vds_lb", "vds_hb", "vds_la", "vds_ha", "otsd", "uvlo", "gdf", "vds_ocp", "fault"};
-static const std::string VGS_Status_2_str[11] = {"vgs_lc", "vgs_hc", "vgs_lb", "vgs_hb", "vgs_la", "vgs_ha", "cpuv", "otw", "sc_oc", "sb_oc", "sa_oc"};
-static const std::string Driver_Control_str[11] = {"CLR_FLT", "BRAKE", "COAST", "1PWM_DIR", "1PWM_COM", "PWM_MODE0", "PWM_MODE1", "OTW_REP", "DIS_GDF", "DIS_CPUV", "Reserved"};
 
 class DRV8323S {
  public:
@@ -30,6 +32,46 @@ class DRV8323S {
         SPI.begin(_SCK, _MISO, _MOSI, _SS); // init
         pinMode(_SS, OUTPUT);
     }
+
+    struct FaultStatus {
+        uint1_t vds_lc : 1;
+        uint1_t vds_hc : 1;
+        uint1_t vds_lb : 1;
+        uint1_t vds_hb : 1;
+        uint1_t vds_la : 1;
+        uint1_t vds_ha : 1;
+        uint1_t otsd : 1;
+        uint1_t uvlo : 1;
+        uint1_t gdf : 1;
+        uint1_t vds_ocp : 1;
+        uint1_t fault : 1;
+    } FaultStatus_;
+
+    struct VGSStatus {
+        uint1_t vgs_lc : 1;
+        uint1_t vgs_hc : 1;
+        uint1_t vgs_lb : 1;
+        uint1_t vgs_hb : 1;
+        uint1_t vgs_la : 1;
+        uint1_t vgs_ha : 1;
+        uint1_t cpuv : 1;
+        uint1_t otw : 1;
+        uint1_t sc_oc : 1;
+        uint1_t sb_oc : 1;
+        uint1_t sa_oc : 1;
+    } VGSStatus_;
+
+    struct DriverControl {
+        uint1_t CLR_FLT : 1;
+        uint1_t BRAKE : 1;
+        uint1_t COAST : 1;
+        uint1_t PWM_MODE0 : 1;
+        uint1_t PWM_MODE1 : 1;
+        uint1_t OTW_REP : 1;
+        uint1_t DIS_GDF : 1;
+        uint1_t DIS_CPUV : 1;
+    } DriverControl_;
+
 
     void disable() {
         uint32_t status = get_drv_status();
@@ -48,17 +90,11 @@ class DRV8323S {
         DriverBase::disable();
     }
 
-    void enable() {
-        
+    void enable() { // TODO: add read function and compare the data, return true or false 
+        write_reg(Driver_Control << 11 | Reserved_bit << 10 | DriverControl_.DIS_CPUV << 9 | DriverControl_.DIS_GDF << 8 |  DriverControl_.OTW_REP << 7 | DriverControl_.PWM_MODE1 << 6 | DriverControl_.PWM_MODE0 << 5 | DriverControl_.1PWM_COM << 4 | DriverControl_.1PWM_DIR << 3 | DriverControl_.COAST << 2 | DriverControl_.BRAKE << 1 | DriverControl_.CLR_FLT);
     }
 
-/*
-R/W ADDRESS         DATA
-B15 B14 B13 B12 B11 B10 B9 B8 B7 B6 B5 B4 B3 B2 B1 B0       For a write command (W0 = 0)
-W0  A3  A2  A1  A0  D10 D9 D8 D7 D6 D5 D4 D3 D2 D1 D0
-*/
-
-    void get_status(){
+    void get_status(){ // TODO: Check the order, MSB first
         uint16_t Fault_Status_1_output = read_reg(Fault_Status_1);
         Serial.print("Fault_Status_1:   "); Serial.print(Fault_Status_1_output); Serial.println();
 
@@ -66,13 +102,24 @@ W0  A3  A2  A1  A0  D10 D9 D8 D7 D6 D5 D4 D3 D2 D1 D0
         Serial.print("VGS_Status_2:   "); Serial.print(VGS_Status_2_output); Serial.println();
 
         uint16_t Driver_Control_output = read_reg(Driver_Control);
+        driverControl.Reserved = (Driver_Control_output >> 10) & 0x01;
+        driverControl.DIS_CPUV = (Driver_Control_output >> 9) & 0x01;
+        driverControl.DIS_GDF = (Driver_Control_output >> 8) & 0x01;
+        driverControl.OTW_REP = (Driver_Control_output >> 7) & 0x01;
+        driverControl.PWM_MODE1 = (Driver_Control_output >> 6) & 0x01;
+        driverControl.PWM_MODE0 = (Driver_Control_output >> 5) & 0x01;
+        driverControl.PWM_COM_1 = (Driver_Control_output >> 4) & 0x01;
+        driverControl.PWM_DIR_1 = (Driver_Control_output >> 3) & 0x01;
+        driverControl.COAST = (Driver_Control_output >> 2) & 0x01;
+        driverControl.BRAKE = (Driver_Control_output >> 1) & 0x01;
+        driverControl.CLR_FLT = Driver_Control_output & 0x01;
         Serial.print("Driver_Control:   "); Serial.print(Driver_Control_output); Serial.println();
     }
 
-    void write_reg(uint16_t data) {
+    void write_reg(uint16_t data) { // 15bits of data 
         SPI.beginTransaction(SPISettings(_spiClk, MSBFIRST, SPI_MODE0));
         digitalWrite(SS, LOW);
-        SPI.write16(data);
+        SPI.write16(0 << 15 | data);
         digitalWrite(SS, HIGH);
         SPI.endTransaction();
     }
