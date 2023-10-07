@@ -1,17 +1,16 @@
-//pin for highC not working, conviced its a drv8323 problem unique to the IC
-//Going to make a new one
+//pin for highC not working, convinced its a drv8323s problem unique to the IC 🤷‍♂️ investigating on Monday, swapping drivers
+//Going to make a new one ✅ Done, works like a charm
 
-const int highA = 14;
-const int lowA = 27;
-const int highB = 26; 
-const int lowB = 25;
-const int highC = 35; //35
-const int lowC = 32;
+const int highA = 2;
+const int lowA = 3;
+const int highB = 4; 
+const int lowB = 5;
+const int highC = 6;
+const int lowC = 7;
 
-const int ENB = 13;
+const int ENB = 8;
 
 int i = 1;
-
 
 void setup() {
   // put your setup code here, to run once:
@@ -33,18 +32,20 @@ void setup() {
 
   digitalWrite(ENB, HIGH);
 }
+int c =1000000;
 
 void loop() {
   // put your main code here, to run repeatedly:
   //6 SECTOR
-  if (i != 7){
-    Commutate(i);
-    i++;
-  } else {
-    i = 1;
-   } 
-
-   delay(1);
+  
+  Commutate(i);
+  i++;
+  
+  if (i==6) i = 1;
+  
+  delayMicroseconds(100+c);
+  
+  if (c>1) c-=10;
 }
 
 void Commutate(int sector){
