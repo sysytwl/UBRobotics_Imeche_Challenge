@@ -14,7 +14,14 @@
   - GPIO 13: Data 3
 
 2. I2C: https://randomnerdtutorials.com/esp32-i2c-communication-arduino-ide/
+* MOSI - 23
+* MISO - 19
+* SCK - 18
+* SS - 5
+  
 3. SPI: https://randomnerdtutorials.com/esp32-spi-communication-arduino/
+* SDA	- 21
+* SCL	- 22
 
 4. VL53L1X: 
 * https://github.com/sparkfun/SparkFun_VL53L1X_Arduino_Library
