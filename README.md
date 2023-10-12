@@ -24,7 +24,7 @@
 * SCL	- 22
 
 4. VL53L1X:
-- [*] https://github.com/pololu/vl53l1x-arduino
+- [x] https://github.com/pololu/vl53l1x-arduino
 - [ ] https://github.com/sparkfun/SparkFun_VL53L1X_Arduino_Library
 - [ ] https://github.com/adafruit/Adafruit_VL53L1X
 
