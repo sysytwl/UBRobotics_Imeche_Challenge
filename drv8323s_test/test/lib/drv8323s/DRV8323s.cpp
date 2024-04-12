@@ -6,7 +6,7 @@ DRV8323S::DRV8323S(int8_t SCK, int8_t MISO, int8_t MOSI, int8_t SS) {
     _MOSI = MOSI;
     _SS = SS;
 
-    SPI.begin();
+    SPI.begin(_SCK, _MISO, MOSI, _SS);
     pinMode(_SS, OUTPUT);
 }
 
